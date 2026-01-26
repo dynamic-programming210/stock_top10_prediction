@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Data files (too large for git)
+data/*.parquet
+data/*.txt
+data/*.json
+!data/.gitkeep
+
+# Model files (can be large)
+models/v*/ranker.pkl
+models/v*/reg.pkl
+!models/.gitkeep
+
+# Output files
+outputs/*.parquet
+outputs/*.json
+!outputs/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
