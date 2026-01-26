@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-01-26T12:35:50.322710",
+  "asof_date": "2025-12-30 10:32:50.364020",
+  "data": {
+    "total_bars": 25200,
+    "unique_symbols": 100,
+    "date_range": {
+      "start": "2025-01-13 10:32:50.364020",
+      "end": "2025-12-30 10:32:50.364020"
+    }
+  },
+  "features": {
+    "total_rows": 25200,
+    "unique_symbols": 100
+  },
+  "top10": {
+    "generated": true,
+    "count": 10
+  },
+  "update_results": {
+    "skipped": true
+  },
+  "coverage": {
+    "asof_date_symbols": 100,
+    "asof_date_rate": 1.0
+  }
+}

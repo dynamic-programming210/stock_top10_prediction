@@ -1,0 +1,23 @@
+{
+  "version": "v001",
+  "feature_cols": [
+    "ret_1_z",
+    "ret_3_z",
+    "ret_5_z",
+    "ret_10_z",
+    "range_5_z",
+    "range_10_z",
+    "vol_5_z",
+    "vol_10_z",
+    "body_pct_z",
+    "close_pos_z",
+    "upper_wick_pct_z",
+    "lower_wick_pct_z",
+    "vol_ratio_z",
+    "vol_chg_5_z",
+    "dv_20_z"
+  ],
+  "created_at": "2026-01-26T12:35:44.688833",
+  "cand_k": 50,
+  "top_n": 10
+}
