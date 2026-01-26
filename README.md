@@ -4,11 +4,12 @@ A machine learning system that predicts the top 10 S&P 500 stocks most likely to
 
 ## Features
 
-- 📊 **Daily OHLCV Data**: Collects data from Alpha Vantage (free tier compatible)
-- 🧮 **Technical Features**: Computes returns, volatility, volume signals, candlestick patterns
-- 🤖 **Two-Stage ML Model**: LightGBM Ranker + Regressor for accurate predictions
+- 📊 **Multiple Data Sources**: yfinance (unlimited, free) or Alpha Vantage
+- 🧮 **Technical Features**: Returns, volatility, volume, RSI, MACD, Bollinger Bands
+- 🤖 **Two-Stage ML Model**: GradientBoosting Ranker + Regressor for accurate predictions
 - 📈 **Web Dashboard**: Streamlit app to view latest and historical predictions
-- 🔄 **Incremental Updates**: Rate-limit aware updates that progress through the universe
+- 🔄 **Walk-Forward Validation**: Proper time-series cross-validation to avoid look-ahead bias
+- 📉 **Backtesting Framework**: Simulate historical portfolio performance with realistic costs
 - 📁 **Model Versioning**: Support for multiple model versions (v001, v002, ...)
 
 ## Quick Start
@@ -20,51 +21,86 @@ cd stock
 pip install -r requirements.txt
 ```
 
-### 2. Initial Setup (Fetch Universe & Data)
-
-Due to Alpha Vantage API limits (25 requests/day on free tier), data is fetched incrementally:
+### 2. Fetch Data & Train Model
 
 ```bash
-# Fetch S&P 500 universe and start data collection
-python app/update_daily.py --setup --batch-size 20
+# Fetch data using yfinance (unlimited, recommended)
+python app/update_daily.py --setup
+
+# Or use Alpha Vantage (rate limited)
+python app/update_daily.py --setup --use-alpha-vantage --batch-size 20
 ```
 
-Run this multiple times over several days to build up historical data.
-
-### 3. Train the Model
-
-Once you have enough data (at least 50 symbols with 30+ days of history):
+### 3. Run Daily Updates
 
 ```bash
-python -c "
-from data.fetch_bars import load_existing_bars
-from features.build_features import build_and_save_features
-from models.train import train_full_pipeline
-
-bars = load_existing_bars()
-features = build_and_save_features(bars)
-ranker, regressor, metrics, model_dir = train_full_pipeline(features)
-print(f'Model saved to: {model_dir}')
-"
-```
-
-### 4. Run Daily Updates
-
-```bash
-# Normal daily update
+# Normal daily update with yfinance
 python app/update_daily.py
 
 # Skip data fetch (use existing data)
 python app/update_daily.py --skip-data
+
+# Include backtest
+python app/update_daily.py --backtest
+
+# Run walk-forward validation
+python app/update_daily.py --walk-forward --n-folds 5
 ```
 
-### 5. Launch Web App
+### 4. Launch Web App
 
 ```bash
 streamlit run app/web.py
 ```
 
 Open http://localhost:8501 in your browser.
+
+## Technical Indicators (B1)
+
+The system computes 21 features including:
+
+| Category | Features |
+|----------|----------|
+| Returns | ret_1, ret_3, ret_5, ret_10 |
+| Volatility | vol_5, vol_10, range_5, range_10 |
+| Volume | vol_ratio, vol_chg_5, dv_20 |
+| Candlestick | body_pct, close_pos, upper_wick_pct, lower_wick_pct |
+| **RSI** | rsi_14 (14-period Relative Strength Index) |
+| **MACD** | macd_line, macd_signal, macd_hist |
+| **Bollinger** | bb_position, bb_width |
+
+## Walk-Forward Validation (C8)
+
+Proper time-series cross-validation that prevents look-ahead bias:
+
+```python
+from models.train import walk_forward_validation
+from features.build_features import load_features
+
+features = load_features()
+results = walk_forward_validation(features, n_splits=5, min_train_days=126)
+print(f"Mean Correlation: {results['aggregate']['mean_correlation']:.4f}")
+print(f"Top-10 Hit Rate: {results['aggregate']['mean_hit_rate']:.2%}")
+```
+
+## Backtesting (D5)
+
+Simulate portfolio performance with transaction costs:
+
+```python
+from models.backtest import run_backtest
+from features.build_features import load_features
+from data.fetch_bars import load_existing_bars
+
+results = run_backtest(
+    features_df=load_features(),
+    bars_df=load_existing_bars(),
+    initial_capital=100000,
+    rebalance_days=5  # Weekly rebalancing
+)
+print(f"Total Return: {results['metrics']['total_return']:.2%}")
+print(f"Sharpe Ratio: {results['metrics']['sharpe_ratio']:.2f}")
+```
 
 ## Project Structure
 
@@ -75,26 +111,21 @@ stock/
 ├── requirements.txt       # Python dependencies
 ├── data/
 │   ├── fetch_universe.py  # S&P 500 list fetcher
+│   ├── fetch_yfinance.py  # yfinance data fetcher (A1)
 │   ├── fetch_bars.py      # Alpha Vantage data fetcher
-│   ├── universe_symbols.txt
-│   ├── universe_meta.parquet
-│   ├── bars.parquet
-│   └── feat_z.parquet
+│   └── *.parquet          # Data files
 ├── features/
-│   └── build_features.py  # Feature engineering
+│   └── build_features.py  # Feature engineering (B1: RSI/MACD/BB)
 ├── models/
-│   ├── train.py           # Model training & inference
-│   └── v001/
-│       ├── ranker.pkl
-│       ├── reg.pkl
-│       ├── schema.json
-│       └── metrics.json
+│   ├── train.py           # Training & walk-forward validation (C8)
+│   ├── backtest.py        # Backtesting framework (D5)
+│   └── v001/              # Model artifacts
 ├── app/
 │   ├── update_daily.py    # Daily update pipeline
 │   └── web.py             # Streamlit web app
 └── outputs/
-    ├── top10_latest.parquet
-    ├── top10_history.parquet
+    ├── top10_*.parquet    # Predictions
+    ├── backtest_*.json    # Backtest results
     └── quality_report.json
 ```
 

@@ -1,6 +1,7 @@
 """
 Model training and inference for stock ranking/prediction
 Two-stage model: Gradient Boosting Ranker + Regressor using scikit-learn
+C8: Walk-forward (expanding window) validation
 """
 import pandas as pd
 import numpy as np
@@ -93,6 +94,181 @@ def prepare_training_data(
     logger.info(f"Validation data: {len(val_df)} samples, {val_df['date'].nunique()} dates")
     
     return train_df, val_df
+
+
+# C8: Walk-forward validation
+def walk_forward_validation(
+    df: pd.DataFrame,
+    n_splits: int = 5,
+    min_train_days: int = 126,  # ~6 months minimum training
+    test_days: int = 21,  # ~1 month test window
+    feature_cols: List[str] = None,
+    min_samples_per_date: int = 30
+) -> Dict:
+    """
+    Perform walk-forward (expanding window) cross-validation
+    
+    This is the proper way to validate time-series models:
+    - Train on all data up to time T
+    - Test on data from T to T + test_window
+    - Expand training window, repeat
+    
+    This avoids look-ahead bias that occurs with random train/test splits.
+    
+    Args:
+        df: Feature dataframe with targets
+        n_splits: Number of walk-forward splits
+        min_train_days: Minimum number of trading days for initial training
+        test_days: Number of days in each test window
+        feature_cols: Feature columns to use
+        min_samples_per_date: Minimum symbols per date
+        
+    Returns:
+        Dict with fold results and aggregate metrics
+    """
+    if feature_cols is None:
+        feature_cols = get_z_feature_cols()
+    
+    target_col = 'fwd_ret_5'
+    
+    # Filter to valid rows
+    valid_features = [c for c in feature_cols if c in df.columns]
+    required_cols = valid_features + [target_col, 'date', 'symbol']
+    df = df[required_cols].dropna()
+    
+    # Filter dates with enough samples
+    date_counts = df.groupby('date').size()
+    valid_dates = date_counts[date_counts >= min_samples_per_date].index
+    df = df[df['date'].isin(valid_dates)].copy()
+    df = df.sort_values('date')
+    
+    # Get unique dates
+    unique_dates = sorted(df['date'].unique())
+    n_dates = len(unique_dates)
+    
+    if n_dates < min_train_days + test_days:
+        raise ValueError(f"Not enough dates ({n_dates}) for walk-forward validation")
+    
+    # Calculate split points
+    # Leave room for minimum training + all test windows
+    available_test_days = n_dates - min_train_days
+    if available_test_days < n_splits * test_days:
+        # Reduce test window size
+        test_days = available_test_days // n_splits
+        logger.warning(f"Reduced test_days to {test_days} due to limited data")
+    
+    fold_results = []
+    all_predictions = []
+    
+    logger.info(f"Starting walk-forward validation with {n_splits} folds...")
+    logger.info(f"Total dates: {n_dates}, Min train days: {min_train_days}, Test days per fold: {test_days}")
+    
+    for fold in range(n_splits):
+        # Calculate train/test boundaries
+        test_start_idx = min_train_days + fold * test_days
+        test_end_idx = min(test_start_idx + test_days, n_dates)
+        
+        train_end_date = unique_dates[test_start_idx - 1]
+        test_dates = unique_dates[test_start_idx:test_end_idx]
+        
+        # Split data
+        train_df = df[df['date'] <= train_end_date].copy()
+        test_df = df[df['date'].isin(test_dates)].copy()
+        
+        if train_df.empty or test_df.empty:
+            logger.warning(f"Fold {fold + 1}: Empty train or test set, skipping")
+            continue
+        
+        logger.info(f"Fold {fold + 1}/{n_splits}: Train dates={train_df['date'].nunique()}, "
+                   f"Test dates={test_df['date'].nunique()}, "
+                   f"Train end={train_end_date.date()}")
+        
+        # Train ranker on this fold
+        X_train = train_df[valid_features].values
+        y_train = train_df[target_col].values
+        
+        ranker = GradientBoostingRegressor(**RANKER_PARAMS)
+        ranker.fit(X_train, y_train)
+        
+        # Predict on test set
+        X_test = test_df[valid_features].values
+        y_test = test_df[target_col].values
+        y_pred = ranker.predict(X_test)
+        
+        # Calculate metrics
+        fold_corr = np.corrcoef(y_pred, y_test)[0, 1] if len(y_test) > 1 else 0
+        fold_rmse = np.sqrt(np.mean((y_pred - y_test) ** 2))
+        
+        # Calculate ranking metrics (hit rate for top predictions)
+        test_with_pred = test_df.copy()
+        test_with_pred['pred'] = y_pred
+        
+        # Per-date ranking accuracy
+        hit_rates = []
+        for date in test_dates:
+            date_df = test_with_pred[test_with_pred['date'] == date]
+            if len(date_df) < 10:
+                continue
+            
+            # Check if top 10 by prediction are actually top performers
+            top10_pred = date_df.nlargest(10, 'pred')['symbol'].values
+            top10_actual = date_df.nlargest(10, target_col)['symbol'].values
+            hit_rate = len(set(top10_pred) & set(top10_actual)) / 10
+            hit_rates.append(hit_rate)
+        
+        avg_hit_rate = np.mean(hit_rates) if hit_rates else 0
+        
+        fold_result = {
+            'fold': fold + 1,
+            'train_dates': train_df['date'].nunique(),
+            'test_dates': len(test_dates),
+            'train_samples': len(train_df),
+            'test_samples': len(test_df),
+            'train_end': str(train_end_date.date()),
+            'test_start': str(test_dates[0].date()) if len(test_dates) > 0 else None,
+            'test_end': str(test_dates[-1].date()) if len(test_dates) > 0 else None,
+            'correlation': float(fold_corr),
+            'rmse': float(fold_rmse),
+            'top10_hit_rate': float(avg_hit_rate)
+        }
+        fold_results.append(fold_result)
+        
+        # Store predictions for aggregate analysis
+        test_with_pred['fold'] = fold + 1
+        all_predictions.append(test_with_pred)
+    
+    # Aggregate metrics
+    if fold_results:
+        correlations = [f['correlation'] for f in fold_results]
+        rmses = [f['rmse'] for f in fold_results]
+        hit_rates = [f['top10_hit_rate'] for f in fold_results]
+        
+        aggregate = {
+            'mean_correlation': float(np.mean(correlations)),
+            'std_correlation': float(np.std(correlations)),
+            'mean_rmse': float(np.mean(rmses)),
+            'std_rmse': float(np.std(rmses)),
+            'mean_hit_rate': float(np.mean(hit_rates)),
+            'std_hit_rate': float(np.std(hit_rates))
+        }
+    else:
+        aggregate = {}
+    
+    logger.info(f"\nWalk-Forward Results:")
+    logger.info(f"  Mean Correlation: {aggregate.get('mean_correlation', 0):.4f} "
+               f"± {aggregate.get('std_correlation', 0):.4f}")
+    logger.info(f"  Mean RMSE: {aggregate.get('mean_rmse', 0):.4f} "
+               f"± {aggregate.get('std_rmse', 0):.4f}")
+    logger.info(f"  Mean Top-10 Hit Rate: {aggregate.get('mean_hit_rate', 0):.2%} "
+               f"± {aggregate.get('std_hit_rate', 0):.2%}")
+    
+    return {
+        'fold_results': fold_results,
+        'aggregate': aggregate,
+        'n_splits': n_splits,
+        'min_train_days': min_train_days,
+        'test_days': test_days
+    }
 
 
 def create_ranking_groups(df: pd.DataFrame) -> np.ndarray:

@@ -30,11 +30,16 @@ MIN_BARS_FOR_FEATURES = 30  # Minimum bars needed to compute features
 
 # ============ FEATURE SETTINGS ============
 FEATURE_COLS = [
+    # Original features
     'ret_1', 'ret_3', 'ret_5', 'ret_10',
     'range_5', 'range_10',
     'vol_5', 'vol_10',
     'body_pct', 'close_pos', 'upper_wick_pct', 'lower_wick_pct',
-    'vol_ratio', 'vol_chg_5', 'dv_20'
+    'vol_ratio', 'vol_chg_5', 'dv_20',
+    # B1: Technical indicators
+    'rsi_14',                           # RSI (14-period)
+    'macd_line', 'macd_signal', 'macd_hist',  # MACD
+    'bb_position', 'bb_width',          # Bollinger Bands
 ]
 
 # ============ MODEL SETTINGS ============

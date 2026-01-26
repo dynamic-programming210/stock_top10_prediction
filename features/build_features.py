@@ -117,6 +117,89 @@ def compute_volume_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def compute_rsi(df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    """
+    B1: Compute RSI (Relative Strength Index)
+    RSI measures momentum on a 0-100 scale
+    """
+    df = df.copy()
+    
+    # Calculate price changes
+    delta = df['close'].diff()
+    
+    # Separate gains and losses
+    gains = delta.where(delta > 0, 0.0)
+    losses = (-delta).where(delta < 0, 0.0)
+    
+    # Calculate average gains and losses (using EMA for smoother results)
+    avg_gain = gains.ewm(com=period - 1, min_periods=period).mean()
+    avg_loss = losses.ewm(com=period - 1, min_periods=period).mean()
+    
+    # Calculate RS and RSI
+    rs = avg_gain / avg_loss.replace(0, np.nan)
+    df['rsi_14'] = 100 - (100 / (1 + rs))
+    
+    return df
+
+
+def compute_macd(
+    df: pd.DataFrame, 
+    fast_period: int = 12, 
+    slow_period: int = 26, 
+    signal_period: int = 9
+) -> pd.DataFrame:
+    """
+    B1: Compute MACD (Moving Average Convergence Divergence)
+    MACD shows relationship between two EMAs
+    """
+    df = df.copy()
+    close = df['close']
+    
+    # Calculate EMAs
+    ema_fast = close.ewm(span=fast_period, adjust=False).mean()
+    ema_slow = close.ewm(span=slow_period, adjust=False).mean()
+    
+    # MACD line = Fast EMA - Slow EMA
+    df['macd_line'] = ema_fast - ema_slow
+    
+    # Signal line = EMA of MACD line
+    df['macd_signal'] = df['macd_line'].ewm(span=signal_period, adjust=False).mean()
+    
+    # MACD histogram = MACD line - Signal line
+    df['macd_hist'] = df['macd_line'] - df['macd_signal']
+    
+    return df
+
+
+def compute_bollinger_bands(df: pd.DataFrame, period: int = 20, num_std: float = 2.0) -> pd.DataFrame:
+    """
+    B1: Compute Bollinger Bands
+    Shows price position relative to volatility bands
+    """
+    df = df.copy()
+    close = df['close']
+    
+    # Middle band (SMA)
+    middle = close.rolling(period).mean()
+    
+    # Standard deviation
+    std = close.rolling(period).std()
+    
+    # Upper and lower bands
+    upper = middle + (num_std * std)
+    lower = middle - (num_std * std)
+    
+    # BB Position: where price is within the bands (-1 to 1, 0 = middle)
+    # Values > 1 means above upper band, < -1 means below lower band
+    band_width = upper - lower
+    df['bb_position'] = (close - middle) / (band_width / 2).replace(0, np.nan)
+    
+    # BB Width: normalized band width (volatility indicator)
+    df['bb_width'] = band_width / middle.replace(0, np.nan)
+    
+    return df
+
+
 def compute_target(df: pd.DataFrame, horizon: int = 5) -> pd.DataFrame:
     """
     Compute forward return target
@@ -138,6 +221,10 @@ def compute_all_features(df: pd.DataFrame) -> pd.DataFrame:
     df = compute_volatility_features(df)
     df = compute_candlestick_features(df)
     df = compute_volume_features(df)
+    # B1: Technical indicators
+    df = compute_rsi(df)
+    df = compute_macd(df)
+    df = compute_bollinger_bands(df)
     df = compute_target(df)
     
     return df
