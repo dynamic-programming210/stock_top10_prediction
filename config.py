@@ -40,7 +40,28 @@ FEATURE_COLS = [
     'rsi_14',                           # RSI (14-period)
     'macd_line', 'macd_signal', 'macd_hist',  # MACD
     'bb_position', 'bb_width',          # Bollinger Bands
+    # B2-B5: Additional technical indicators
+    'sma_cross',                        # B2: SMA crossover signal
+    'ema_cross',                        # B2: EMA crossover signal
+    'atr_14', 'atr_pct',                # B3: ATR
+    'obv_slope',                        # B4: OBV trend
+    'stoch_k', 'stoch_d',               # B5: Stochastic Oscillator
 ]
+
+# A4: Sector mapping for classification
+SECTOR_MAP = {
+    'Information Technology': 0,
+    'Financials': 1,
+    'Health Care': 2,
+    'Consumer Discretionary': 3,
+    'Consumer Staples': 4,
+    'Communication Services': 5,
+    'Industrials': 6,
+    'Energy': 7,
+    'Utilities': 8,
+    'Real Estate': 9,
+    'Materials': 10,
+}
 
 # ============ MODEL SETTINGS ============
 CURRENT_MODEL_VERSION = "v001"

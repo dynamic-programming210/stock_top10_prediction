@@ -200,6 +200,113 @@ def compute_bollinger_bands(df: pd.DataFrame, period: int = 20, num_std: float =
     return df
 
 
+def compute_ma_crossovers(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    B2: Compute Moving Average Crossover signals
+    Golden Cross: short MA crosses above long MA (bullish)
+    Death Cross: short MA crosses below long MA (bearish)
+    """
+    df = df.copy()
+    close = df['close']
+    
+    # SMA crossover (50/200)
+    sma_short = close.rolling(50).mean()
+    sma_long = close.rolling(200).mean()
+    # Normalized distance between MAs (positive = bullish)
+    df['sma_cross'] = (sma_short - sma_long) / sma_long.replace(0, np.nan)
+    
+    # EMA crossover (12/26 - same periods as MACD)
+    ema_short = close.ewm(span=12, adjust=False).mean()
+    ema_long = close.ewm(span=26, adjust=False).mean()
+    df['ema_cross'] = (ema_short - ema_long) / ema_long.replace(0, np.nan)
+    
+    return df
+
+
+def compute_atr(df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    """
+    B3: Compute ATR (Average True Range)
+    Measures volatility - useful for position sizing and stop-loss
+    """
+    df = df.copy()
+    
+    high = df['high']
+    low = df['low']
+    close = df['close']
+    prev_close = close.shift(1)
+    
+    # True Range is max of:
+    # 1. Current High - Current Low
+    # 2. |Current High - Previous Close|
+    # 3. |Current Low - Previous Close|
+    tr1 = high - low
+    tr2 = abs(high - prev_close)
+    tr3 = abs(low - prev_close)
+    
+    true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    
+    # ATR is the smoothed average of True Range
+    df['atr_14'] = true_range.ewm(span=period, adjust=False).mean()
+    
+    # ATR as percentage of price (normalized)
+    df['atr_pct'] = df['atr_14'] / close
+    
+    return df
+
+
+def compute_obv(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    B4: Compute OBV (On-Balance Volume)
+    Cumulative volume indicator - rising OBV suggests accumulation
+    """
+    df = df.copy()
+    
+    close = df['close']
+    volume = df['volume']
+    
+    # Direction: +1 if close > prev close, -1 if less, 0 if equal
+    direction = np.sign(close.diff())
+    
+    # OBV = cumulative sum of signed volume
+    obv = (direction * volume).cumsum()
+    
+    # Use slope of OBV over 10 periods (normalized by volume)
+    obv_ma = obv.rolling(10).mean()
+    obv_slope = obv - obv_ma
+    
+    # Normalize by average volume
+    avg_vol = volume.rolling(20).mean()
+    df['obv_slope'] = obv_slope / avg_vol.replace(0, np.nan)
+    
+    return df
+
+
+def compute_stochastic(df: pd.DataFrame, k_period: int = 14, d_period: int = 3) -> pd.DataFrame:
+    """
+    B5: Compute Stochastic Oscillator
+    Measures closing price relative to high-low range
+    %K > 80: overbought, %K < 20: oversold
+    """
+    df = df.copy()
+    
+    high = df['high']
+    low = df['low']
+    close = df['close']
+    
+    # Highest high and lowest low over period
+    lowest_low = low.rolling(k_period).min()
+    highest_high = high.rolling(k_period).max()
+    
+    # %K = (Close - Lowest Low) / (Highest High - Lowest Low) * 100
+    range_hl = highest_high - lowest_low
+    df['stoch_k'] = (close - lowest_low) / range_hl.replace(0, np.nan) * 100
+    
+    # %D = SMA of %K
+    df['stoch_d'] = df['stoch_k'].rolling(d_period).mean()
+    
+    return df
+
+
 def compute_target(df: pd.DataFrame, horizon: int = 5) -> pd.DataFrame:
     """
     Compute forward return target
@@ -225,6 +332,11 @@ def compute_all_features(df: pd.DataFrame) -> pd.DataFrame:
     df = compute_rsi(df)
     df = compute_macd(df)
     df = compute_bollinger_bands(df)
+    # B2-B5: Additional indicators
+    df = compute_ma_crossovers(df)
+    df = compute_atr(df)
+    df = compute_obv(df)
+    df = compute_stochastic(df)
     df = compute_target(df)
     
     return df

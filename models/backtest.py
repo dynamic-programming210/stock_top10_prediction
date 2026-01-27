@@ -521,9 +521,15 @@ def compare_to_benchmark(
         tracking_error = (portfolio_daily - benchmark_daily).std() * np.sqrt(252)
         annualized_alpha = alpha * (252 / len(merged))  # Rough annualization
         info_ratio = annualized_alpha / tracking_error if tracking_error > 0 else 0
+        
+        # Benchmark Sharpe ratio
+        bench_annual_return = (1 + benchmark_return) ** (252 / len(merged)) - 1
+        bench_volatility = benchmark_daily.std() * np.sqrt(252)
+        bench_sharpe = bench_annual_return / bench_volatility if bench_volatility > 0 else 0
     else:
         beta = 1
         info_ratio = 0
+        bench_sharpe = 0
     
     return {
         'benchmark': benchmark_symbol,
@@ -531,8 +537,137 @@ def compare_to_benchmark(
         'benchmark_return': benchmark_return,
         'alpha': alpha,
         'beta': beta,
-        'information_ratio': info_ratio
+        'information_ratio': info_ratio,
+        'benchmark_sharpe': bench_sharpe
     }
+
+
+def fetch_benchmark_data(benchmark_symbol: str = 'SPY') -> pd.DataFrame:
+    """
+    D6: Fetch benchmark data (SPY) using yfinance
+    
+    Args:
+        benchmark_symbol: Benchmark ticker (default: SPY)
+        
+    Returns:
+        DataFrame with benchmark OHLCV data
+    """
+    try:
+        from data.fetch_yfinance import YFinanceClient
+        
+        client = YFinanceClient()
+        df = client.fetch_daily_bars(benchmark_symbol)
+        
+        if df is not None and not df.empty:
+            logger.info(f"Fetched {len(df)} bars for benchmark {benchmark_symbol}")
+            return df
+        else:
+            logger.warning(f"Could not fetch benchmark {benchmark_symbol}")
+            return pd.DataFrame()
+            
+    except Exception as e:
+        logger.error(f"Error fetching benchmark: {e}")
+        return pd.DataFrame()
+
+
+def run_backtest_with_benchmark(
+    features_df: pd.DataFrame,
+    bars_df: pd.DataFrame,
+    model_version: str = None,
+    benchmark_symbol: str = 'SPY',
+    **kwargs
+) -> Dict:
+    """
+    D6: Run backtest and automatically compare to benchmark
+    
+    Fetches benchmark data if not present in bars_df
+    """
+    # Check if benchmark is in bars
+    if benchmark_symbol not in bars_df['symbol'].unique():
+        logger.info(f"Fetching benchmark {benchmark_symbol} data...")
+        bench_df = fetch_benchmark_data(benchmark_symbol)
+        if not bench_df.empty:
+            bars_df = pd.concat([bars_df, bench_df], ignore_index=True)
+    
+    # Run backtest
+    results = run_backtest(
+        features_df=features_df,
+        bars_df=bars_df,
+        model_version=model_version,
+        **kwargs
+    )
+    
+    # Add benchmark comparison
+    if results:
+        comparison = compare_to_benchmark(results, bars_df, benchmark_symbol)
+        results['benchmark_comparison'] = comparison
+    
+    return results
+
+
+def generate_backtest_report(results: Dict, output_path: Path = None) -> str:
+    """
+    D6: Generate a formatted backtest report with benchmark comparison
+    
+    Returns:
+        Markdown-formatted report string
+    """
+    if not results or 'metrics' not in results:
+        return "No backtest results available"
+    
+    metrics = results['metrics']
+    comparison = results.get('benchmark_comparison', {})
+    
+    report = []
+    report.append("# Backtest Report\n")
+    report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+    
+    # Portfolio Performance
+    report.append("## Portfolio Performance\n")
+    report.append(f"| Metric | Value |")
+    report.append(f"|--------|-------|")
+    report.append(f"| Initial Capital | ${metrics['initial_capital']:,.2f} |")
+    report.append(f"| Final Value | ${metrics['final_value']:,.2f} |")
+    report.append(f"| Total Return | {metrics['total_return']:.2%} |")
+    report.append(f"| Annualized Return | {metrics['annualized_return']:.2%} |")
+    report.append(f"| Sharpe Ratio | {metrics['sharpe_ratio']:.2f} |")
+    report.append(f"| Max Drawdown | {metrics['max_drawdown']:.2%} |")
+    report.append(f"| Win Rate | {metrics['win_rate']:.2%} |")
+    report.append(f"| Total Trades | {metrics['n_trades']} |")
+    report.append(f"| Trading Costs | ${metrics['total_trading_costs']:,.2f} |")
+    report.append("")
+    
+    # Benchmark Comparison
+    if comparison:
+        bench = comparison.get('benchmark', 'SPY')
+        report.append(f"## vs {bench} Benchmark\n")
+        report.append(f"| Metric | Portfolio | {bench} | Difference |")
+        report.append(f"|--------|-----------|------|------------|")
+        
+        port_ret = comparison.get('portfolio_return', 0)
+        bench_ret = comparison.get('benchmark_return', 0)
+        alpha = comparison.get('alpha', 0)
+        
+        report.append(f"| Total Return | {port_ret:.2%} | {bench_ret:.2%} | {alpha:+.2%} |")
+        report.append(f"| Beta | {comparison.get('beta', 1):.2f} | 1.00 | - |")
+        report.append(f"| Information Ratio | {comparison.get('information_ratio', 0):.2f} | - | - |")
+        report.append("")
+        
+        # Performance Summary
+        if alpha > 0:
+            report.append(f"✅ **Outperformed** {bench} by {alpha:.2%}")
+        else:
+            report.append(f"❌ **Underperformed** {bench} by {abs(alpha):.2%}")
+    
+    report_text = "\n".join(report)
+    
+    # Save if path provided
+    if output_path:
+        with open(output_path, 'w') as f:
+            f.write(report_text)
+        logger.info(f"Saved backtest report to {output_path}")
+    
+    return report_text
 
 
 if __name__ == "__main__":

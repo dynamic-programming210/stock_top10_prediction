@@ -223,6 +223,44 @@ def load_universe_meta() -> pd.DataFrame:
         
     return pd.read_parquet(UNIVERSE_META_FILE)
 
+
+def get_symbol_sector(symbol: str) -> str:
+    """
+    A4: Get sector for a symbol from universe metadata
+    Returns sector string or 'Unknown' if not found
+    """
+    meta = load_universe_meta()
+    row = meta[meta['symbol'] == symbol]
+    if not row.empty:
+        return row.iloc[0]['sector']
+    return 'Unknown'
+
+
+def get_sector_mapping() -> dict:
+    """
+    A4: Get symbol to sector mapping for all symbols
+    Returns dict: {symbol: sector}
+    """
+    meta = load_universe_meta()
+    return dict(zip(meta['symbol'], meta['sector']))
+
+
+def get_symbols_by_sector(sector: str) -> list:
+    """
+    A4: Get all symbols in a given sector
+    """
+    meta = load_universe_meta()
+    return meta[meta['sector'] == sector]['symbol'].tolist()
+
+
+def get_sector_stats() -> pd.DataFrame:
+    """
+    A4: Get sector statistics (count per sector)
+    """
+    meta = load_universe_meta()
+    return meta.groupby('sector').size().reset_index(name='count').sort_values('count', ascending=False)
+
+
 def update_universe() -> pd.DataFrame:
     """
     Update universe list (call periodically to catch index changes)

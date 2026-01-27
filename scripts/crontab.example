@@ -1,0 +1,24 @@
+# E1: Cron configuration for Linux/Unix scheduled updates
+#
+# To install, run: crontab -e
+# Then add the following line (adjust paths as needed):
+#
+# Stock predictor daily update at 6:30 AM on weekdays
+# 30 6 * * 1-5 /path/to/stock/scripts/daily_update.sh
+#
+# Format: minute hour day month weekday command
+# Weekday: 0=Sunday, 1=Monday, ..., 5=Friday, 6=Saturday
+#
+# Example crontab entries:
+
+# Run at 6:30 AM on weekdays (before market opens)
+30 6 * * 1-5 /Users/yadu/Documents/doc/stock/scripts/daily_update.sh
+
+# Alternative: Run at 4:30 PM on weekdays (after market closes)
+# 30 16 * * 1-5 /Users/yadu/Documents/doc/stock/scripts/daily_update.sh
+
+# Run with backtest every Monday at 7:00 AM
+# 0 7 * * 1 RUN_BACKTEST=true /Users/yadu/Documents/doc/stock/scripts/daily_update.sh
+
+# Verify cron is working (logs every minute - remove after testing)
+# * * * * * echo "Cron test: $(date)" >> /tmp/cron_test.log
