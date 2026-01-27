@@ -670,6 +670,184 @@ def generate_backtest_report(results: Dict, output_path: Path = None) -> str:
     return report_text
 
 
+# =============================================================================
+# Helper functions for testing and external use
+# =============================================================================
+
+def calculate_sharpe_ratio(returns, risk_free_rate: float = 0.02) -> float:
+    """
+    Calculate annualized Sharpe ratio
+    
+    Args:
+        returns: Array of daily returns
+        risk_free_rate: Annual risk-free rate (default 2%)
+        
+    Returns:
+        Annualized Sharpe ratio
+    """
+    returns = np.array(returns)
+    if len(returns) < 2:
+        return 0.0
+    
+    daily_rf = risk_free_rate / 252
+    excess_returns = returns - daily_rf
+    
+    mean_excess = np.mean(excess_returns)
+    std_excess = np.std(excess_returns, ddof=1)
+    
+    if std_excess == 0:
+        return 0.0
+    
+    return (mean_excess / std_excess) * np.sqrt(252)
+
+
+def calculate_max_drawdown(portfolio_values) -> float:
+    """
+    Calculate maximum drawdown from portfolio values
+    
+    Args:
+        portfolio_values: List or array of portfolio values over time
+        
+    Returns:
+        Maximum drawdown as a positive fraction (0 to 1)
+    """
+    values = np.array(portfolio_values)
+    if len(values) < 2:
+        return 0.0
+    
+    # Calculate running maximum
+    running_max = np.maximum.accumulate(values)
+    
+    # Calculate drawdown at each point
+    drawdowns = (running_max - values) / running_max
+    
+    return float(np.max(drawdowns))
+
+
+def calculate_win_rate(returns) -> float:
+    """
+    Calculate win rate (fraction of positive returns)
+    
+    Args:
+        returns: Array of returns
+        
+    Returns:
+        Win rate as fraction (0 to 1)
+    """
+    returns = np.array(returns)
+    if len(returns) == 0:
+        return 0.0
+    
+    positive = np.sum(returns > 0)
+    return positive / len(returns)
+
+
+def calculate_alpha_beta(portfolio_returns, benchmark_returns) -> Tuple[float, float]:
+    """
+    Calculate alpha and beta vs benchmark using linear regression
+    
+    Args:
+        portfolio_returns: Series or array of portfolio returns
+        benchmark_returns: Series or array of benchmark returns
+        
+    Returns:
+        (alpha, beta) tuple, annualized
+    """
+    port_ret = np.array(portfolio_returns)
+    bench_ret = np.array(benchmark_returns)
+    
+    # Align lengths
+    min_len = min(len(port_ret), len(bench_ret))
+    port_ret = port_ret[:min_len]
+    bench_ret = bench_ret[:min_len]
+    
+    if len(port_ret) < 2:
+        return 0.0, 1.0
+    
+    # Calculate beta (slope) and alpha (intercept)
+    cov = np.cov(port_ret, bench_ret)[0, 1]
+    var = np.var(bench_ret, ddof=1)
+    
+    if var == 0:
+        return 0.0, 1.0
+    
+    beta = cov / var
+    alpha = np.mean(port_ret) - beta * np.mean(bench_ret)
+    
+    # Annualize alpha
+    alpha_annual = alpha * 252
+    
+    return float(alpha_annual), float(beta)
+
+
+def calculate_information_ratio(portfolio_returns, benchmark_returns) -> float:
+    """
+    Calculate information ratio (active return / tracking error)
+    
+    Args:
+        portfolio_returns: Array of portfolio returns
+        benchmark_returns: Array of benchmark returns
+        
+    Returns:
+        Annualized information ratio
+    """
+    port_ret = np.array(portfolio_returns)
+    bench_ret = np.array(benchmark_returns)
+    
+    min_len = min(len(port_ret), len(bench_ret))
+    port_ret = port_ret[:min_len]
+    bench_ret = bench_ret[:min_len]
+    
+    if len(port_ret) < 2:
+        return 0.0
+    
+    # Active returns
+    active_returns = port_ret - bench_ret
+    
+    mean_active = np.mean(active_returns)
+    std_active = np.std(active_returns, ddof=1)
+    
+    if std_active == 0:
+        return 0.0
+    
+    # Annualize
+    return (mean_active / std_active) * np.sqrt(252)
+
+
+def apply_transaction_costs(trade_value: float, cost_rate: float) -> float:
+    """
+    Apply transaction costs to a trade value
+    
+    Args:
+        trade_value: Gross trade value
+        cost_rate: Cost as fraction of trade value
+        
+    Returns:
+        Net value after costs
+    """
+    return trade_value * (1 - cost_rate)
+
+
+def apply_slippage(price: float, slippage_rate: float, is_buy: bool) -> float:
+    """
+    Apply slippage to a price
+    
+    Args:
+        price: Original price
+        slippage_rate: Slippage as fraction
+        is_buy: True for buy orders, False for sell
+        
+    Returns:
+        Price after slippage
+    """
+    if is_buy:
+        # Buy at higher price (worse for buyer)
+        return price * (1 + slippage_rate)
+    else:
+        # Sell at lower price (worse for seller)
+        return price * (1 - slippage_rate)
+
+
 if __name__ == "__main__":
     # Test backtest
     from features import load_features

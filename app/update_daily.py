@@ -338,6 +338,19 @@ if __name__ == "__main__":
                         help='Run walk-forward validation')
     parser.add_argument('--n-folds', type=int, default=5,
                         help='Number of folds for walk-forward validation (default: 5)')
+    # C1: Add hyperparameter tuning option
+    parser.add_argument('--tune', action='store_true',
+                        help='Run hyperparameter tuning')
+    parser.add_argument('--tune-method', type=str, default='random',
+                        choices=['grid', 'random'],
+                        help='Tuning method: grid or random (default: random)')
+    parser.add_argument('--tune-quick', action='store_true',
+                        help='Use smaller search space for quick tuning')
+    # D3: Add diversification option
+    parser.add_argument('--diversify', action='store_true',
+                        help='Apply sector diversification to top-10')
+    parser.add_argument('--max-per-sector', type=int, default=3,
+                        help='Max stocks per sector (default: 3)')
     
     args = parser.parse_args()
     
@@ -359,6 +372,20 @@ if __name__ == "__main__":
             print("\nRunning walk-forward validation...")
             wf_results = walk_forward_validation(features, n_splits=args.n_folds)
             print(f"\nWalk-Forward Results saved.")
+    
+    # C1: Hyperparameter tuning
+    if args.tune:
+        from models.tuning import auto_tune, apply_best_params
+        features = load_features()
+        if not features.empty:
+            print(f"\nRunning hyperparameter tuning ({args.tune_method})...")
+            tune_results = auto_tune(
+                features,
+                method=args.tune_method,
+                quick=args.tune_quick
+            )
+            print(f"\nBest Score: {tune_results['best_score']:.4f}")
+            apply_best_params(tune_results['best_params'])
     
     # D5: Run backtest
     if args.backtest:
