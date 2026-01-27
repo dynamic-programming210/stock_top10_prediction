@@ -1,6 +1,7 @@
 """
 Daily update pipeline for stock predictions
 Orchestrates data fetching, feature building, and top-10 generation
+A1: Updated to support yfinance (default) or Alpha Vantage
 """
 import pandas as pd
 import numpy as np
@@ -17,10 +18,8 @@ from config import (
     SYMBOLS_PER_RUN
 )
 from data.fetch_universe import load_universe_symbols
-from data.fetch_bars import (
-    load_existing_bars, save_bars, incremental_update,
-    UpdateQueue, UPDATE_QUEUE_FILE
-)
+# A1: Import both data sources
+from data.fetch_bars import load_existing_bars, save_bars
 from features.build_features import (
     build_and_save_features, load_features, select_asof_date,
     get_feature_coverage_by_date
@@ -129,7 +128,8 @@ def run_daily_update(
     batch_size: int = SYMBOLS_PER_RUN,
     model_version: str = None,
     skip_data_update: bool = False,
-    force_retrain: bool = False
+    force_retrain: bool = False,
+    use_yfinance: bool = True  # A1: Default to yfinance
 ) -> Dict:
     """
     Run the daily update pipeline
@@ -146,6 +146,7 @@ def run_daily_update(
         model_version: Model version to use
         skip_data_update: Skip fetching new data
         force_retrain: Force model retraining
+        use_yfinance: A1: Use yfinance (True) or Alpha Vantage (False)
         
     Returns:
         Summary dict of the update
@@ -171,8 +172,24 @@ def run_daily_update(
         
         # Step 2: Incremental data update
         if not skip_data_update:
-            logger.info(f"\n[Step 2] Fetching data (batch_size={batch_size})...")
-            update_results = incremental_update(symbols, batch_size)
+            logger.info(f"\n[Step 2] Fetching data...")
+            
+            if use_yfinance:
+                # A1: Use yfinance (unlimited, fast batch downloads)
+                from data.fetch_yfinance import fetch_all_universe, update_incremental
+                logger.info("Using yfinance (batch download)...")
+                bars_df = fetch_all_universe(symbols)
+                update_results = {
+                    'source': 'yfinance',
+                    'symbols_fetched': bars_df['symbol'].nunique() if not bars_df.empty else 0,
+                    'bars_fetched': len(bars_df)
+                }
+            else:
+                # Original Alpha Vantage (rate limited)
+                from data.fetch_bars import incremental_update
+                logger.info(f"Using Alpha Vantage (batch_size={batch_size})...")
+                update_results = incremental_update(symbols, batch_size)
+            
             result['steps']['data_update'] = update_results
             logger.info(f"Update results: {update_results}")
         else:
@@ -310,6 +327,17 @@ if __name__ == "__main__":
                         help='Skip data update (use existing data)')
     parser.add_argument('--model-version', type=str, default=CURRENT_MODEL_VERSION,
                         help=f'Model version to use (default: {CURRENT_MODEL_VERSION})')
+    # A1: Add data source option
+    parser.add_argument('--use-alpha-vantage', action='store_true',
+                        help='Use Alpha Vantage instead of yfinance (default: yfinance)')
+    # D5: Add backtest option
+    parser.add_argument('--backtest', action='store_true',
+                        help='Run backtest after update')
+    # C8: Add walk-forward validation option
+    parser.add_argument('--walk-forward', action='store_true',
+                        help='Run walk-forward validation')
+    parser.add_argument('--n-folds', type=int, default=5,
+                        help='Number of folds for walk-forward validation (default: 5)')
     
     args = parser.parse_args()
     
@@ -319,7 +347,27 @@ if __name__ == "__main__":
         result = run_daily_update(
             batch_size=args.batch_size,
             model_version=args.model_version,
-            skip_data_update=args.skip_data
+            skip_data_update=args.skip_data,
+            use_yfinance=not args.use_alpha_vantage  # A1: Default to yfinance
         )
+    
+    # C8: Walk-forward validation
+    if args.walk_forward:
+        from models.train import walk_forward_validation
+        features = load_features()
+        if not features.empty:
+            print("\nRunning walk-forward validation...")
+            wf_results = walk_forward_validation(features, n_splits=args.n_folds)
+            print(f"\nWalk-Forward Results saved.")
+    
+    # D5: Run backtest
+    if args.backtest:
+        from models.backtest import run_backtest
+        features = load_features()
+        bars = load_existing_bars()
+        if not features.empty and not bars.empty:
+            print("\nRunning backtest...")
+            bt_results = run_backtest(features, bars)
+            print(f"\nBacktest complete. Results saved to outputs/")
     
     print(f"\nResult: {result['status']}")

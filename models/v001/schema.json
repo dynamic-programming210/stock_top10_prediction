@@ -15,9 +15,15 @@
     "lower_wick_pct_z",
     "vol_ratio_z",
     "vol_chg_5_z",
-    "dv_20_z"
+    "dv_20_z",
+    "rsi_14_z",
+    "macd_line_z",
+    "macd_signal_z",
+    "macd_hist_z",
+    "bb_position_z",
+    "bb_width_z"
   ],
-  "created_at": "2026-01-26T12:35:44.688833",
+  "created_at": "2026-01-26T13:46:35.181382",
   "cand_k": 50,
   "top_n": 10
 }
