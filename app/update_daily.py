@@ -351,8 +351,37 @@ if __name__ == "__main__":
                         help='Apply sector diversification to top-10')
     parser.add_argument('--max-per-sector', type=int, default=3,
                         help='Max stocks per sector (default: 3)')
+    # D1: Export options
+    parser.add_argument('--export', type=str, choices=['csv', 'excel'],
+                        help='Export top-10 predictions to CSV or Excel')
+    parser.add_argument('--export-history', action='store_true',
+                        help='Include historical predictions in export')
+    # E2: Health check option
+    parser.add_argument('--health-check', action='store_true',
+                        help='Run system health check')
+    # A2: Update fundamentals option
+    parser.add_argument('--update-fundamentals', action='store_true',
+                        help='Update fundamental data for all symbols')
     
     args = parser.parse_args()
+    
+    # E2: Health check only
+    if args.health_check:
+        from monitoring import HealthChecker
+        print("\n🏥 Running system health check...\n")
+        health = HealthChecker()
+        report = health.run_all_checks()
+        health.print_report(report)
+        sys.exit(0)
+    
+    # A2: Update fundamentals only
+    if args.update_fundamentals:
+        from data.fetch_fundamentals import update_fundamentals
+        symbols = load_universe_symbols()
+        print(f"\n📊 Updating fundamentals for {len(symbols)} symbols...")
+        update_fundamentals(symbols)
+        print("✅ Fundamentals update complete")
+        sys.exit(0)
     
     if args.setup:
         result = run_initial_setup(args.batch_size)
@@ -396,5 +425,20 @@ if __name__ == "__main__":
             print("\nRunning backtest...")
             bt_results = run_backtest(features, bars)
             print(f"\nBacktest complete. Results saved to outputs/")
+    
+    # D1: Export predictions
+    if args.export:
+        from outputs.export import export_top10_to_csv, export_top10_to_excel
+        print(f"\n📤 Exporting predictions to {args.export.upper()}...")
+        
+        if args.export == 'csv':
+            path = export_top10_to_csv(include_history=args.export_history)
+        else:
+            path = export_top10_to_excel(include_history=args.export_history)
+        
+        if path:
+            print(f"✅ Exported to: {path}")
+        else:
+            print("❌ Export failed (no predictions found)")
     
     print(f"\nResult: {result['status']}")
