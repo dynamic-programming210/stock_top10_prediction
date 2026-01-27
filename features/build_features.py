@@ -307,6 +307,75 @@ def compute_stochastic(df: pd.DataFrame, k_period: int = 14, d_period: int = 3) 
     return df
 
 
+def compute_momentum_signals(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    B6: Compute Momentum and Mean-Reversion Signals
+    
+    Momentum signals capture trend-following opportunities
+    Mean-reversion signals capture potential reversals from extremes
+    """
+    df = df.copy()
+    close = df['close']
+    
+    # === Rate of Change (ROC) - pure momentum ===
+    # ROC measures % price change over period
+    df['roc_5'] = (close - close.shift(5)) / close.shift(5).replace(0, np.nan)
+    df['roc_10'] = (close - close.shift(10)) / close.shift(10).replace(0, np.nan)
+    df['roc_20'] = (close - close.shift(20)) / close.shift(20).replace(0, np.nan)
+    
+    # === Price vs Moving Averages - trend position ===
+    sma_20 = close.rolling(20).mean()
+    sma_50 = close.rolling(50).mean()
+    sma_200 = close.rolling(200).mean()
+    
+    # Distance from MAs as % (positive = above MA = bullish)
+    df['price_vs_sma20'] = (close - sma_20) / sma_20.replace(0, np.nan)
+    df['price_vs_sma50'] = (close - sma_50) / sma_50.replace(0, np.nan)
+    df['price_vs_sma200'] = (close - sma_200) / sma_200.replace(0, np.nan)
+    
+    # === Price Z-Score - mean reversion signal ===
+    # How many std deviations from recent mean
+    rolling_mean = close.rolling(20).mean()
+    rolling_std = close.rolling(20).std()
+    df['price_zscore_20'] = (close - rolling_mean) / rolling_std.replace(0, np.nan)
+    
+    # === Distance from 52-week High/Low ===
+    # Great for identifying potential mean-reversion opportunities
+    high_252 = close.rolling(252, min_periods=100).max()  # 52 weeks
+    low_252 = close.rolling(252, min_periods=100).min()
+    
+    # Distance from high (0 = at high, negative = below)
+    df['dist_from_52w_high'] = (close - high_252) / high_252.replace(0, np.nan)
+    
+    # Distance from low (0 = at low, positive = above)
+    df['dist_from_52w_low'] = (close - low_252) / low_252.replace(0, np.nan)
+    
+    # === Momentum Composite Score ===
+    # Combines multiple momentum signals
+    # Higher = stronger momentum
+    mom_signals = ['roc_5', 'roc_10', 'roc_20']
+    for col in mom_signals:
+        if col not in df.columns:
+            df[col] = np.nan
+    
+    # Normalize and average momentum signals (robust to NaN)
+    mom_rank = df[mom_signals].rank(pct=True, axis=0)
+    df['momentum_composite'] = mom_rank.mean(axis=1)
+    
+    # === Mean Reversion Signal ===
+    # Composite signal identifying potential reversals
+    # Stocks that are oversold (low RSI, low z-score) may bounce
+    # Uses price z-score and distance from 52w low
+    
+    # Mean reversion opportunity score (higher = more oversold = potential bounce)
+    df['mean_reversion_signal'] = (
+        -df['price_zscore_20'].clip(-3, 3) / 3 +  # Inverted z-score
+        df['dist_from_52w_low'].clip(0, 0.5)       # Near 52w low
+    ) / 2
+    
+    return df
+
+
 def compute_target(df: pd.DataFrame, horizon: int = 5) -> pd.DataFrame:
     """
     Compute forward return target
@@ -337,6 +406,8 @@ def compute_all_features(df: pd.DataFrame) -> pd.DataFrame:
     df = compute_atr(df)
     df = compute_obv(df)
     df = compute_stochastic(df)
+    # B6: Momentum and mean-reversion signals
+    df = compute_momentum_signals(df)
     df = compute_target(df)
     
     return df

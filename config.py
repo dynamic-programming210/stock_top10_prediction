@@ -8,8 +8,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent
 DATA_DIR = PROJECT_ROOT / "data"
 MODELS_DIR = PROJECT_ROOT / "models"
+MODEL_DIR = MODELS_DIR  # Alias for monitoring.py compatibility
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 APP_DIR = PROJECT_ROOT / "app"
+FEATURES_FILE = DATA_DIR / "feat_z.parquet"  # Alias for monitoring.py
 
 # Ensure directories exist
 for d in [DATA_DIR, MODELS_DIR, OUTPUTS_DIR, APP_DIR]:
@@ -46,6 +48,13 @@ FEATURE_COLS = [
     'atr_14', 'atr_pct',                # B3: ATR
     'obv_slope',                        # B4: OBV trend
     'stoch_k', 'stoch_d',               # B5: Stochastic Oscillator
+    # B6: Momentum and mean-reversion signals
+    'roc_5', 'roc_10', 'roc_20',        # Rate of Change
+    'price_vs_sma20', 'price_vs_sma50', 'price_vs_sma200',  # Price vs MAs
+    'price_zscore_20',                  # Price z-score (mean reversion)
+    'dist_from_52w_high', 'dist_from_52w_low',  # Distance from extremes
+    'momentum_composite',               # Combined momentum score
+    'mean_reversion_signal',            # Mean reversion opportunity
 ]
 
 # A4: Sector mapping for classification
