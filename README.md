@@ -55,6 +55,47 @@ streamlit run app/web.py
 
 Open http://localhost:8501 in your browser.
 
+### 5. Launch REST API (E5)
+
+```bash
+# Start FastAPI server
+uvicorn app.api:app --reload --port 8000
+
+# Or run directly
+python app/api.py
+```
+
+Open http://localhost:8000/docs for interactive API documentation.
+
+#### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/top10/latest` | GET | Latest top-10 predictions |
+| `/api/v1/top10/history` | GET | Historical predictions (with date filters) |
+| `/api/v1/top10/date/{date}` | GET | Predictions for specific date |
+| `/api/v1/symbol/{symbol}` | GET | Prediction history for a symbol |
+| `/api/v1/health` | GET | System health status |
+| `/api/v1/performance` | GET | Prediction performance metrics |
+| `/api/v1/universe` | GET | S&P 500 universe metadata |
+| `/api/v1/dates` | GET | Available prediction dates |
+
+#### Example API Usage
+
+```bash
+# Get latest predictions
+curl http://localhost:8000/api/v1/top10/latest
+
+# Get predictions for specific date
+curl http://localhost:8000/api/v1/top10/date/2026-01-27
+
+# Get symbol history
+curl http://localhost:8000/api/v1/symbol/AAPL
+
+# Check system health
+curl http://localhost:8000/api/v1/health
+```
+
 ## Technical Indicators (B1)
 
 The system computes 21 features including:

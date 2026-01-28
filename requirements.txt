@@ -16,6 +16,9 @@ yfinance>=0.2.36  # A1: Unlimited free data source
 
 # Web app
 streamlit>=1.28.0
+fastapi>=0.109.0  # E5: REST API
+uvicorn>=0.27.0   # E5: ASGI server
+pydantic>=2.5.0   # E5: Data validation
 
 # Utilities
 python-dateutil>=2.8.0
