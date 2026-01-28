@@ -362,6 +362,24 @@ if __name__ == "__main__":
     # A2: Update fundamentals option
     parser.add_argument('--update-fundamentals', action='store_true',
                         help='Update fundamental data for all symbols')
+    # C2: Ensemble model options
+    parser.add_argument('--ensemble', action='store_true',
+                        help='Use ensemble model for predictions')
+    parser.add_argument('--ensemble-strategy', type=str, default='stacking',
+                        choices=['voting', 'stacking', 'weighted_average'],
+                        help='Ensemble strategy (default: stacking)')
+    parser.add_argument('--compare-models', action='store_true',
+                        help='Compare individual vs ensemble model performance')
+    # C7: Explainability options
+    parser.add_argument('--explain', action='store_true',
+                        help='Generate SHAP explanations for model predictions')
+    parser.add_argument('--explain-top10', action='store_true',
+                        help='Generate SHAP explanations for top-10 predictions')
+    # D2: Performance tracking options
+    parser.add_argument('--track-performance', action='store_true',
+                        help='Track and update prediction performance metrics')
+    parser.add_argument('--performance-export', action='store_true',
+                        help='Export performance history to CSV')
     
     args = parser.parse_args()
     
@@ -440,5 +458,57 @@ if __name__ == "__main__":
             print(f"✅ Exported to: {path}")
         else:
             print("❌ Export failed (no predictions found)")
+    
+    # C2: Ensemble model comparison
+    if args.compare_models:
+        from models.ensemble import compare_models
+        features = load_features()
+        if not features.empty:
+            print("\n🔬 Comparing individual vs ensemble models...")
+            comparison = compare_models(features, strategy=args.ensemble_strategy)
+            print("\n📊 Model Comparison Results:")
+            for model_name, metrics in comparison.items():
+                print(f"  {model_name}: R²={metrics.get('r2', 0):.4f}, MAE={metrics.get('mae', 0):.4f}")
+    
+    # C7: SHAP explainability
+    if args.explain or args.explain_top10:
+        from models.explainability import check_shap_available, generate_shap_report, explain_top10_predictions
+        if not check_shap_available():
+            print("\n⚠️ SHAP not installed. Run: pip install shap")
+        else:
+            features = load_features()
+            if not features.empty:
+                if args.explain:
+                    print("\n🔍 Generating SHAP explanations...")
+                    report_path = generate_shap_report(features)
+                    if report_path:
+                        print(f"✅ SHAP report saved to: {report_path}")
+                
+                if args.explain_top10:
+                    print("\n🎯 Explaining top-10 predictions...")
+                    explanations = explain_top10_predictions(features)
+                    if explanations:
+                        print(f"✅ Generated explanations for {len(explanations)} stocks")
+    
+    # D2: Performance tracking
+    if args.track_performance:
+        from outputs.performance_tracker import track_performance, get_latest_performance
+        print("\n📈 Tracking prediction performance...")
+        metrics = track_performance()
+        if metrics:
+            print(f"\n📊 Latest Performance Metrics:")
+            print(f"  Direction Accuracy: {metrics.get('direction_accuracy', 0):.1%}")
+            print(f"  Positive Return Rate: {metrics.get('positive_return_rate', 0):.1%}")
+            print(f"  Correlation: {metrics.get('correlation', 0):.4f}")
+            print(f"  MAE: {metrics.get('mae', 0):.4f}")
+    
+    if args.performance_export:
+        from outputs.performance_tracker import export_performance_to_csv
+        print("\n📤 Exporting performance history...")
+        path = export_performance_to_csv()
+        if path:
+            print(f"✅ Exported to: {path}")
+        else:
+            print("❌ Export failed (no performance data)")
     
     print(f"\nResult: {result['status']}")
