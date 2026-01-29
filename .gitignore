@@ -11,21 +11,15 @@ venv/
 dist/
 build/
 
-# Data files (too large for git)
-data/*.parquet
-data/*.txt
-data/*.json
-!data/.gitkeep
+# Keep data files for Streamlit Cloud deployment
+# (GitHub Actions will update these daily)
+# Uncomment below to exclude large historical data if needed:
+# data/bars.parquet
 
-# Model files (can be large)
-models/v*/ranker.pkl
-models/v*/reg.pkl
-!models/.gitkeep
-
-# Output files
-outputs/*.parquet
-outputs/*.json
-!outputs/.gitkeep
+# Model files (keep for deployment)
+# Uncomment to exclude if too large:
+# models/v*/ranker.pkl
+# models/v*/reg.pkl
 
 # IDE
 .idea/
@@ -36,8 +30,12 @@ outputs/*.json
 
 # Logs
 *.log
-logs/
+outputs/logs/
 
 # Environment variables
 .env
 .env.local
+
+# Temporary files
+*.tmp
+*.bak
