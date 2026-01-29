@@ -1,0 +1,2 @@
+pred_date,avg_return,total_return,n_picks,direction_accuracy,positive_rate,rolling_avg_return,rolling_accuracy,cumulative_return
+2026-01-23,0.01624240670684165,0.1624240670684165,10,0.5,0.5,0.01624240670684165,0.5,0.016242406706841628

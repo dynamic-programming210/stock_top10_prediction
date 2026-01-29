@@ -1,0 +1,15 @@
+{
+  "initial_capital": 100000,
+  "final_value": 3469071.37978411,
+  "total_return": 33.6907137978411,
+  "annualized_return": 2.2746695132722596,
+  "annual_volatility": 0.2071519249075752,
+  "sharpe_ratio": 10.980682483578885,
+  "max_drawdown": -0.09973522473402857,
+  "win_rate": 0.6408544726301736,
+  "total_trading_costs": 327791.35401340795,
+  "avg_trade_size": 91895.52958043395,
+  "n_trades": 2378,
+  "n_rebalances": 153,
+  "backtest_days": 750
+}
