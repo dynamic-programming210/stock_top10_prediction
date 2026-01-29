@@ -33,11 +33,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Run daily update
+      - name: Download fresh data and build features
         run: |
-          python app/update_daily.py --diversify --track-performance
+          # Fetch latest data using yfinance (unlimited)
+          # This regenerates bars.parquet and feat_z.parquet
+          python app/update_daily.py --batch-size 505
         env:
-          # Alpha Vantage API key (optional, yfinance is default)
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      
+      - name: Generate predictions
+        run: |
+          # Generate predictions using existing model
+          python app/update_daily.py --skip-data --diversify --track-performance
+        env:
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       
       - name: Configure Git
@@ -47,11 +55,34 @@ jobs:
       
       - name: Commit and push updates
         run: |
-          # Add data files
-          git add data/*.parquet data/*.json data/*.txt || true
-          git add outputs/*.parquet outputs/*.json || true
-          git add outputs/performance/*.parquet outputs/performance/*.json || true
-          git add outputs/exports/*.csv outputs/exports/*.xlsx || true
+          # Add only essential output files (small files)
+          # Exclude large feature files - they can be regenerated
+          git add outputs/top10_latest.parquet || true
+          git add outputs/top10_history.parquet || true
+          git add outputs/quality_report.json || true
+          git add outputs/backtest_results.json || true
+          git add outputs/backtest_trades.parquet || true
+          
+          # Add performance files if they exist
+          if [ -d "outputs/performance" ]; then
+            git add outputs/performance/*.json || true
+            git add outputs/performance/*.csv || true
+          fi
+          
+          # Add export files if they exist
+          if [ -d "outputs/exports" ]; then
+            git add outputs/exports/*.csv || true
+          fi
+          
+          # Add universe files (small)
+          git add data/universe_symbols.txt || true
+          git add data/universe_meta.parquet || true
+          git add data/update_queue.json || true
+          
+          # DO NOT add large files:
+          # - data/bars.parquet (can be large)
+          # - data/feat_z.parquet (very large, regenerated from bars)
+          # - data/fundamentals.parquet (can be large)
           
           # Check if there are changes to commit
           if git diff --staged --quiet; then
