@@ -19,6 +19,7 @@ nltk>=3.8.0  # VADER sentiment analyzer
 
 # Web app
 streamlit>=1.28.0
+plotly>=5.18.0    # F4: Interactive charts
 fastapi>=0.109.0  # E5: REST API
 uvicorn>=0.27.0   # E5: ASGI server
 pydantic>=2.5.0   # E5: Data validation
