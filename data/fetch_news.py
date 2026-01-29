@@ -73,22 +73,46 @@ def fetch_news_for_symbol(symbol: str, max_articles: int = 10) -> List[Dict]:
         cutoff_date = datetime.now() - timedelta(days=MAX_NEWS_AGE_DAYS)
         
         for item in news[:max_articles]:
+            # Handle new yfinance API structure (nested under 'content')
+            content = item.get('content', item)  # Fall back to item itself if no 'content' key
+            
             # Parse publish time
             pub_time = None
-            if 'providerPublishTime' in item:
-                pub_time = datetime.fromtimestamp(item['providerPublishTime'])
+            pub_date_str = content.get('pubDate') or item.get('providerPublishTime')
+            if pub_date_str:
+                if isinstance(pub_date_str, str):
+                    # ISO format: '2026-01-28T23:43:09Z'
+                    try:
+                        pub_time = datetime.fromisoformat(pub_date_str.replace('Z', '+00:00'))
+                        pub_time = pub_time.replace(tzinfo=None)  # Remove timezone for comparison
+                    except:
+                        pass
+                elif isinstance(pub_date_str, (int, float)):
+                    # Unix timestamp
+                    pub_time = datetime.fromtimestamp(pub_date_str)
             
             # Skip old articles
             if pub_time and pub_time < cutoff_date:
                 continue
             
+            # Extract title
+            title = content.get('title', '') or item.get('title', '')
+            
+            # Extract publisher
+            provider = content.get('provider', {})
+            publisher = provider.get('displayName', '') if isinstance(provider, dict) else ''
+            
+            # Extract link
+            canonical = content.get('canonicalUrl', {})
+            link = canonical.get('url', '') if isinstance(canonical, dict) else item.get('link', '')
+            
             article = {
                 'symbol': symbol,
-                'title': item.get('title', ''),
-                'publisher': item.get('publisher', ''),
-                'link': item.get('link', ''),
+                'title': title,
+                'publisher': publisher,
+                'link': link,
                 'publish_time': pub_time,
-                'type': item.get('type', 'STORY')
+                'type': content.get('contentType', 'STORY')
             }
             articles.append(article)
         
