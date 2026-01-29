@@ -55,6 +55,12 @@ FEATURE_COLS = [
     'dist_from_52w_high', 'dist_from_52w_low',  # Distance from extremes
     'momentum_composite',               # Combined momentum score
     'mean_reversion_signal',            # Mean reversion opportunity
+    # Task 3: News sentiment features
+    'news_sentiment_avg',               # Average news sentiment (-1 to 1)
+    'news_sentiment_std',               # Sentiment volatility
+    'news_count',                       # Number of recent articles
+    'news_positive_ratio',              # % positive articles
+    'news_negative_ratio',              # % negative articles
 ]
 
 # A4: Sector mapping for classification

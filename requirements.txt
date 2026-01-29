@@ -14,6 +14,9 @@ requests>=2.31.0
 lxml>=4.9.0  # For reading Wikipedia tables
 yfinance>=0.2.36  # A1: Unlimited free data source
 
+# Task 3: News sentiment analysis
+nltk>=3.8.0  # VADER sentiment analyzer
+
 # Web app
 streamlit>=1.28.0
 fastapi>=0.109.0  # E5: REST API

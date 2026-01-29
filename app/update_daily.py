@@ -129,7 +129,8 @@ def run_daily_update(
     model_version: str = None,
     skip_data_update: bool = False,
     force_retrain: bool = False,
-    use_yfinance: bool = True  # A1: Default to yfinance
+    use_yfinance: bool = True,  # A1: Default to yfinance
+    include_news: bool = False  # Task 3: Include news sentiment
 ) -> Dict:
     """
     Run the daily update pipeline
@@ -147,6 +148,7 @@ def run_daily_update(
         skip_data_update: Skip fetching new data
         force_retrain: Force model retraining
         use_yfinance: A1: Use yfinance (True) or Alpha Vantage (False)
+        include_news: Task 3: Include news sentiment in features
         
     Returns:
         Summary dict of the update
@@ -206,10 +208,14 @@ def run_daily_update(
             result['status'] = 'no_data'
             return result
         
-        features_df = build_and_save_features(bars_df)
+        # Task 3: Include news sentiment if requested
+        if include_news:
+            logger.info("Including news sentiment features...")
+        features_df = build_and_save_features(bars_df, include_news=include_news)
         result['steps']['features'] = {
             'rows': len(features_df),
-            'symbols': features_df['symbol'].nunique() if not features_df.empty else 0
+            'symbols': features_df['symbol'].nunique() if not features_df.empty else 0,
+            'include_news': include_news
         }
         
         if features_df.empty:
@@ -293,7 +299,7 @@ def run_daily_update(
         return result
 
 
-def run_initial_setup(max_symbols: int = None):
+def run_initial_setup(max_symbols: int = None, include_news: bool = False):
     """
     Run initial setup to bootstrap the system
     Fetches data for a subset of symbols (due to API limits)
@@ -311,7 +317,10 @@ def run_initial_setup(max_symbols: int = None):
     logger.info(f"Run the update multiple times to build up data.")
     
     # 3. Run update
-    result = run_daily_update(batch_size=max_symbols or SYMBOLS_PER_RUN)
+    result = run_daily_update(
+        batch_size=max_symbols or SYMBOLS_PER_RUN,
+        include_news=include_news
+    )
     
     return result
 
@@ -380,6 +389,11 @@ if __name__ == "__main__":
                         help='Track and update prediction performance metrics')
     parser.add_argument('--performance-export', action='store_true',
                         help='Export performance history to CSV')
+    # Task 3: News sentiment options
+    parser.add_argument('--fetch-news', action='store_true',
+                        help='Fetch and include news sentiment in features')
+    parser.add_argument('--news-only', action='store_true',
+                        help='Only fetch news sentiment (no prediction update)')
     
     args = parser.parse_args()
     
@@ -401,14 +415,25 @@ if __name__ == "__main__":
         print("✅ Fundamentals update complete")
         sys.exit(0)
     
+    # Task 3: News sentiment only mode
+    if args.news_only:
+        from data.fetch_news import update_news_sentiment, print_sentiment_summary
+        symbols = load_universe_symbols()
+        print(f"\n📰 Fetching news sentiment for {len(symbols)} symbols...")
+        df = update_news_sentiment(symbols, force_refresh=True)
+        print_sentiment_summary(df)
+        print("✅ News sentiment update complete")
+        sys.exit(0)
+    
     if args.setup:
-        result = run_initial_setup(args.batch_size)
+        result = run_initial_setup(args.batch_size, include_news=args.fetch_news)
     else:
         result = run_daily_update(
             batch_size=args.batch_size,
             model_version=args.model_version,
             skip_data_update=args.skip_data,
-            use_yfinance=not args.use_alpha_vantage  # A1: Default to yfinance
+            use_yfinance=not args.use_alpha_vantage,  # A1: Default to yfinance
+            include_news=args.fetch_news  # Task 3: Include news sentiment
         )
     
     # C8: Walk-forward validation

@@ -479,15 +479,56 @@ def cross_sectional_zscore(df: pd.DataFrame, feature_cols: List[str] = None) -> 
     return df
 
 
-def build_and_save_features(bars_df: pd.DataFrame) -> pd.DataFrame:
+def build_and_save_features(bars_df: pd.DataFrame, include_news: bool = False) -> pd.DataFrame:
     """
     Build features, apply z-scoring, and save to parquet
+    
+    Args:
+        bars_df: DataFrame with OHLCV data
+        include_news: Whether to fetch and include news sentiment features
     """
     # Compute raw features
     features_df = build_feature_table(bars_df)
     
     if features_df.empty:
         return features_df
+    
+    # Task 3: Add news sentiment features if requested
+    if include_news:
+        try:
+            from data.fetch_news import get_news_features_for_date, update_news_sentiment
+            
+            # Get unique symbols
+            symbols = features_df['symbol'].unique().tolist()
+            
+            # Update news sentiment (fetches if needed)
+            logger.info("Fetching news sentiment data...")
+            update_news_sentiment(symbols)
+            
+            # Get features
+            news_features = get_news_features_for_date()
+            
+            if not news_features.empty:
+                # Merge news features with main features
+                features_df = features_df.merge(news_features, on='symbol', how='left')
+                
+                # Fill missing news features with neutral values
+                news_cols = ['news_sentiment_avg', 'news_sentiment_std', 
+                           'news_count', 'news_positive_ratio', 'news_negative_ratio']
+                for col in news_cols:
+                    if col in features_df.columns:
+                        if col == 'news_count':
+                            features_df[col] = features_df[col].fillna(0)
+                        else:
+                            features_df[col] = features_df[col].fillna(0.0)
+                
+                logger.info(f"Added news sentiment features for {len(news_features)} symbols")
+            else:
+                logger.warning("No news sentiment data available")
+        except ImportError:
+            logger.warning("News module not available. Install nltk: pip install nltk")
+        except Exception as e:
+            logger.warning(f"Failed to add news features: {e}")
     
     # Apply z-scoring
     features_z = cross_sectional_zscore(features_df)
