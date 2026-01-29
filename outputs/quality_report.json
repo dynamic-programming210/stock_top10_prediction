@@ -1,29 +1,27 @@
 {
-  "generated_at": "2026-01-28T06:34:33.705978",
-  "asof_date": "2026-01-27 00:00:00",
+  "generated_at": "2026-01-29T09:02:32.689370",
+  "asof_date": "2026-01-28 00:00:00",
   "data": {
-    "total_bars": 66088,
-    "unique_symbols": 88,
+    "total_bars": 376237,
+    "unique_symbols": 503,
     "date_range": {
       "start": "2023-01-30 00:00:00",
-      "end": "2026-01-27 00:00:00"
+      "end": "2026-01-28 00:00:00"
     }
   },
   "features": {
-    "total_rows": 66088,
-    "unique_symbols": 88
+    "total_rows": 376237,
+    "unique_symbols": 503
   },
   "top10": {
     "generated": true,
     "count": 10
   },
   "update_results": {
-    "source": "yfinance",
-    "symbols_fetched": 88,
-    "bars_fetched": 66088
+    "skipped": true
   },
   "coverage": {
-    "asof_date_symbols": 88,
-    "asof_date_rate": 1.0
+    "asof_date_symbols": 502,
+    "asof_date_rate": 0.9980119284294234
   }
 }
