@@ -2,11 +2,18 @@ name: Daily Stock Prediction Update
 
 on:
   # Run daily at 6:00 AM UTC (after US market close + processing time)
+  # Note: GitHub may delay or skip scheduled runs during high load
   schedule:
     - cron: '0 6 * * 1-5'  # Weekdays only (Mon-Fri)
+    - cron: '30 6 * * 1-5' # Backup run 30 min later in case first is skipped
   
   # Allow manual trigger
   workflow_dispatch:
+
+# Prevent duplicate runs if both schedules fire
+concurrency:
+  group: daily-update-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   update-predictions:
@@ -35,7 +42,27 @@ jobs:
           # Download VADER lexicon for sentiment analysis
           python -c "import nltk; nltk.download('vader_lexicon', quiet=True)"
       
+      - name: Check if already updated today
+        id: check-update
+        run: |
+          # Check if predictions were already updated today (for duplicate schedule runs)
+          if [ -f outputs/top10_latest.parquet ]; then
+            LAST_UPDATE=$(python -c "import pandas as pd; df=pd.read_parquet('outputs/top10_latest.parquet'); print(df['date'].max().strftime('%Y-%m-%d'))" 2>/dev/null || echo "none")
+            TODAY=$(date -u +%Y-%m-%d)
+            if [ "$LAST_UPDATE" == "$TODAY" ]; then
+              echo "skip=true" >> $GITHUB_OUTPUT
+              echo "Predictions already updated for $TODAY, skipping..."
+            else
+              echo "skip=false" >> $GITHUB_OUTPUT
+              echo "Last update: $LAST_UPDATE, today: $TODAY - will update"
+            fi
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "No existing predictions, will update"
+          fi
+      
       - name: Download fresh data and build features
+        if: steps.check-update.outputs.skip != 'true'
         run: |
           # Fetch latest data using yfinance (unlimited)
           # This regenerates bars.parquet and feat_z.parquet
@@ -45,6 +72,7 @@ jobs:
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       
       - name: Generate predictions
+        if: steps.check-update.outputs.skip != 'true'
         run: |
           # Generate predictions using existing model
           python app/update_daily.py --skip-data --diversify --track-performance
@@ -52,11 +80,13 @@ jobs:
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       
       - name: Configure Git
+        if: steps.check-update.outputs.skip != 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
       
       - name: Commit and push updates
+        if: steps.check-update.outputs.skip != 'true'
         run: |
           # Add only essential output files (small files)
           # Exclude large feature files - they can be regenerated
