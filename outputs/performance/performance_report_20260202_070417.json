@@ -1,0 +1,114 @@
+{
+  "generated_at": "2026-02-02T07:04:17.565590",
+  "metrics": {
+    "period": {
+      "start": "2026-01-23",
+      "end": "2026-01-29",
+      "n_prediction_days": 4,
+      "total_predictions": 57
+    },
+    "accuracy": {
+      "direction_accuracy": 0.3157894736842105,
+      "positive_return_rate": 0.3157894736842105,
+      "beat_benchmark_rate": 0.24561403508771928
+    },
+    "returns": {
+      "mean_predicted": 0.03394073174596787,
+      "mean_actual": -0.026897715864545507,
+      "std_actual": 0.05227029720323582,
+      "median_actual": -0.02632085197105804,
+      "correlation": -0.13349442867429148,
+      "prediction_error_mae": 0.0713043475917437
+    },
+    "risk": {
+      "max_drawdown_single": -0.16887429999995712,
+      "worst_prediction": -0.16887429999995712,
+      "best_prediction": 0.12966253819174056,
+      "sharpe_proxy": -0.5145889215047431
+    },
+    "daily_stats": {
+      "avg_daily_return": -0.028424818405607018,
+      "winning_days": 0,
+      "losing_days": 4,
+      "win_rate_by_day": 0.0
+    }
+  },
+  "rolling_summary": {
+    "final_cumulative_return": -0.10943416817938212,
+    "avg_rolling_return": -0.02011994409007522,
+    "avg_rolling_accuracy": 0.3585171568627451
+  },
+  "recent_performance": {
+    "last_50_predictions": {
+      "avg_return": -0.02515355284387587,
+      "direction_accuracy": 0.32,
+      "positive_rate": 0.32
+    }
+  },
+  "notable_predictions": {
+    "best_performers": [
+      {
+        "pred_date": "2026-01-28 00:00:00",
+        "symbol": "VZ",
+        "actual_ret_5": 0.12966253819174056,
+        "pred_ret_5": 0.019807607627678202
+      },
+      {
+        "pred_date": "2026-01-23 00:00:00",
+        "symbol": "T",
+        "actual_ret_5": 0.11106396417709832,
+        "pred_ret_5": 0.010146761939459494
+      },
+      {
+        "pred_date": "2026-01-27 00:00:00",
+        "symbol": "GEV",
+        "actual_ret_5": 0.048606875006222905,
+        "pred_ret_5": 0.031135039764945523
+      },
+      {
+        "pred_date": "2026-01-23 00:00:00",
+        "symbol": "AIG",
+        "actual_ret_5": 0.03539819647948593,
+        "pred_ret_5": 0.006682328939799344
+      },
+      {
+        "pred_date": "2026-01-27 00:00:00",
+        "symbol": "PEP",
+        "actual_ret_5": 0.03259850882718596,
+        "pred_ret_5": 0.009724536308364697
+      }
+    ],
+    "worst_performers": [
+      {
+        "pred_date": "2026-01-29 00:00:00",
+        "symbol": "APP",
+        "actual_ret_5": -0.16887429999995712,
+        "pred_ret_5": 0.03482697219204225
+      },
+      {
+        "pred_date": "2026-01-27 00:00:00",
+        "symbol": "CVNA",
+        "actual_ret_5": -0.16036593752277783,
+        "pred_ret_5": 0.04204300780755519
+      },
+      {
+        "pred_date": "2026-01-28 00:00:00",
+        "symbol": "APP",
+        "actual_ret_5": -0.1276827234131433,
+        "pred_ret_5": 0.05134525414302833
+      },
+      {
+        "pred_date": "2026-01-23 00:00:00",
+        "symbol": "APP",
+        "actual_ret_5": -0.09782420323808391,
+        "pred_ret_5": 0.020978023979463634
+      },
+      {
+        "pred_date": "2026-01-29 00:00:00",
+        "symbol": "STX",
+        "actual_ret_5": -0.08706362775184058,
+        "pred_ret_5": 0.04395376509821089
+      }
+    ]
+  }
+}
