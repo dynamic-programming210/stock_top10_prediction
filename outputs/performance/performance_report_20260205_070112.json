@@ -1,0 +1,114 @@
+{
+  "generated_at": "2026-02-05T07:01:12.952782",
+  "metrics": {
+    "period": {
+      "start": "2026-01-23",
+      "end": "2026-02-03",
+      "n_prediction_days": 7,
+      "total_predictions": 87
+    },
+    "accuracy": {
+      "direction_accuracy": 0.27586206896551724,
+      "positive_return_rate": 0.27586206896551724,
+      "beat_benchmark_rate": 0.26436781609195403
+    },
+    "returns": {
+      "mean_predicted": 0.03588452119099097,
+      "mean_actual": -0.04490832901816783,
+      "std_actual": 0.08567394669407787,
+      "median_actual": -0.04375245531995602,
+      "correlation": -0.10974649024541727,
+      "prediction_error_mae": 0.09664266097265287
+    },
+    "risk": {
+      "max_drawdown_single": -0.31954886694026907,
+      "worst_prediction": -0.31954886694026907,
+      "best_prediction": 0.19284441775049016,
+      "sharpe_proxy": -0.5241771944804322
+    },
+    "daily_stats": {
+      "avg_daily_return": -0.046307926460223595,
+      "winning_days": 0,
+      "losing_days": 7,
+      "win_rate_by_day": 0.0
+    }
+  },
+  "rolling_summary": {
+    "final_cumulative_return": -0.2840992508103054,
+    "avg_rolling_return": -0.03512004487879695,
+    "avg_rolling_accuracy": 0.3059013605442177
+  },
+  "recent_performance": {
+    "last_50_predictions": {
+      "avg_return": -0.04182940529173771,
+      "direction_accuracy": 0.28,
+      "positive_rate": 0.28
+    }
+  },
+  "notable_predictions": {
+    "best_performers": [
+      {
+        "pred_date": "2026-01-28 00:00:00",
+        "symbol": "VZ",
+        "actual_ret_5": 0.19284441775049016,
+        "pred_ret_5": 0.019807607627678202
+      },
+      {
+        "pred_date": "2026-01-30 00:00:00",
+        "symbol": "SMCI",
+        "actual_ret_5": 0.15973883935708658,
+        "pred_ret_5": 0.026881713670533408
+      },
+      {
+        "pred_date": "2026-01-27 00:00:00",
+        "symbol": "GEV",
+        "actual_ret_5": 0.12638947055020722,
+        "pred_ret_5": 0.031135039764945523
+      },
+      {
+        "pred_date": "2026-01-23 00:00:00",
+        "symbol": "T",
+        "actual_ret_5": 0.11106396417709832,
+        "pred_ret_5": 0.010146761939459494
+      },
+      {
+        "pred_date": "2026-01-27 00:00:00",
+        "symbol": "PEP",
+        "actual_ret_5": 0.09456921252627828,
+        "pred_ret_5": 0.009724536308364697
+      }
+    ],
+    "worst_performers": [
+      {
+        "pred_date": "2026-01-29 00:00:00",
+        "symbol": "APP",
+        "actual_ret_5": -0.31954886694026907,
+        "pred_ret_5": 0.03482697219204225
+      },
+      {
+        "pred_date": "2026-01-28 00:00:00",
+        "symbol": "APP",
+        "actual_ret_5": -0.28582490080492673,
+        "pred_ret_5": 0.05134525414302833
+      },
+      {
+        "pred_date": "2026-02-02 00:00:00",
+        "symbol": "IT",
+        "actual_ret_5": -0.22020747731951318,
+        "pred_ret_5": 0.03191545268988215
+      },
+      {
+        "pred_date": "2026-01-27 00:00:00",
+        "symbol": "CSGP",
+        "actual_ret_5": -0.2188160889664348,
+        "pred_ret_5": 0.046461856331127455
+      },
+      {
+        "pred_date": "2026-02-02 00:00:00",
+        "symbol": "APP",
+        "actual_ret_5": -0.19805383780975025,
+        "pred_ret_5": 0.04280996777451486
+      }
+    ]
+  }
+}
