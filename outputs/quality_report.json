@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-03-17T07:40:15.876422",
-  "asof_date": "2026-03-16 00:00:00",
+  "generated_at": "2026-03-18T07:04:21.002016",
+  "asof_date": "2026-03-17 00:00:00",
   "data": {
-    "total_bars": 375407,
+    "total_bars": 375909,
     "unique_symbols": 503,
     "date_range": {
       "start": "2023-03-20 00:00:00",
-      "end": "2026-03-16 00:00:00"
+      "end": "2026-03-17 00:00:00"
     }
   },
   "features": {
-    "total_rows": 375407,
+    "total_rows": 375909,
     "unique_symbols": 503
   },
   "top10": {
