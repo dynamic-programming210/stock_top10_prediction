@@ -1,0 +1,114 @@
+{
+  "generated_at": "2026-08-14T08:02:18.518733",
+  "metrics": {
+    "period": {
+      "start": "2026-01-23",
+      "end": "2026-08-12",
+      "n_prediction_days": 138,
+      "total_predictions": 1390
+    },
+    "accuracy": {
+      "direction_accuracy": 0.537410071942446,
+      "positive_return_rate": 0.5381294964028777,
+      "beat_benchmark_rate": 0.5230215827338129
+    },
+    "returns": {
+      "mean_predicted": 0.042731730061919056,
+      "mean_actual": 0.01426918984990647,
+      "std_actual": 0.09908339249642986,
+      "median_actual": 0.0049348200112064545,
+      "correlation": 0.02012864602979422,
+      "prediction_error_mae": 0.0806084130316748
+    },
+    "risk": {
+      "max_drawdown_single": -0.36477892898523956,
+      "worst_prediction": -0.36477892898523956,
+      "best_prediction": 0.5785088022692337,
+      "sharpe_proxy": 0.1440119225875377
+    },
+    "daily_stats": {
+      "avg_daily_return": 0.014443285468894998,
+      "winning_days": 82,
+      "losing_days": 56,
+      "win_rate_by_day": 0.5942028985507246
+    }
+  },
+  "rolling_summary": {
+    "final_cumulative_return": 4.918111063564936,
+    "avg_rolling_return": 0.009600874873330324,
+    "avg_rolling_accuracy": 0.5097193235590164
+  },
+  "recent_performance": {
+    "last_50_predictions": {
+      "avg_return": -0.04649867261639098,
+      "direction_accuracy": 0.28,
+      "positive_rate": 0.28
+    }
+  },
+  "notable_predictions": {
+    "best_performers": [
+      {
+        "pred_date": "2026-05-22 00:00:00",
+        "symbol": "DELL",
+        "actual_ret_5": 0.5785088022692337,
+        "pred_ret_5": 0.04603007200155036
+      },
+      {
+        "pred_date": "2026-04-22 00:00:00",
+        "symbol": "INTC",
+        "actual_ret_5": 0.45166240038508165,
+        "pred_ret_5": 0.02324799558633679
+      },
+      {
+        "pred_date": "2026-04-30 00:00:00",
+        "symbol": "DDOG",
+        "actual_ret_5": 0.427717620409262,
+        "pred_ret_5": 0.048534250558522916
+      },
+      {
+        "pred_date": "2026-05-26 00:00:00",
+        "symbol": "DELL",
+        "actual_ret_5": 0.42687169181820833,
+        "pred_ret_5": 0.036144193273705924
+      },
+      {
+        "pred_date": "2026-05-01 00:00:00",
+        "symbol": "DDOG",
+        "actual_ret_5": 0.4243222472125809,
+        "pred_ret_5": 0.04062711233638284
+      }
+    ],
+    "worst_performers": [
+      {
+        "pred_date": "2026-07-22 00:00:00",
+        "symbol": "SNDK",
+        "actual_ret_5": -0.36477892898523956,
+        "pred_ret_5": 0.09984979375800428
+      },
+      {
+        "pred_date": "2026-01-29 00:00:00",
+        "symbol": "APP",
+        "actual_ret_5": -0.34082282091278676,
+        "pred_ret_5": 0.03482697219204225
+      },
+      {
+        "pred_date": "2026-04-23 00:00:00",
+        "symbol": "CHTR",
+        "actual_ret_5": -0.31685830505890267,
+        "pred_ret_5": 0.044401029776042406
+      },
+      {
+        "pred_date": "2026-07-21 00:00:00",
+        "symbol": "SNDK",
+        "actual_ret_5": -0.31036871854206854,
+        "pred_ret_5": 0.0734048773677353
+      },
+      {
+        "pred_date": "2026-06-08 00:00:00",
+        "symbol": "SMCI",
+        "actual_ret_5": -0.2987042690527818,
+        "pred_ret_5": 0.046018417333373904
+      }
+    ]
+  }
+}
