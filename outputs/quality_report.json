@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-19T06:43:21.852376",
+  "generated_at": "2026-08-19T07:24:54.289963",
   "asof_date": "2026-08-18 00:00:00",
   "data": {
-    "total_bars": 372678,
+    "total_bars": 372300,
     "unique_symbols": 499,
     "date_range": {
       "start": "2023-08-21 00:00:00",
@@ -10,7 +10,7 @@
     }
   },
   "features": {
-    "total_rows": 372672,
+    "total_rows": 372294,
     "unique_symbols": 498
   },
   "top10": {
