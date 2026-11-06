@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-11-06T13:47:22.857666",
+  "generated_at": "2026-11-06T14:34:25.416192",
   "asof_date": "2026-11-05 00:00:00",
   "data": {
-    "total_bars": 369755,
-    "unique_symbols": 499,
+    "total_bars": 368998,
+    "unique_symbols": 493,
     "date_range": {
       "start": "2023-11-07 00:00:00",
       "end": "2026-11-05 00:00:00"
     }
   },
   "features": {
-    "total_rows": 369735,
-    "unique_symbols": 493
+    "total_rows": 368983,
+    "unique_symbols": 492
   },
   "top10": {
     "generated": true,
@@ -21,7 +21,7 @@
     "skipped": true
   },
   "coverage": {
-    "asof_date_symbols": 493,
+    "asof_date_symbols": 492,
     "asof_date_rate": 1.0
   }
 }
