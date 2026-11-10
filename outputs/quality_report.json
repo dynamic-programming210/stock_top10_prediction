@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-10T14:23:16.487769",
+  "generated_at": "2026-11-10T15:11:40.267030",
   "asof_date": "2026-11-09 00:00:00",
   "data": {
-    "total_bars": 368785,
-    "unique_symbols": 499,
+    "total_bars": 368780,
+    "unique_symbols": 494,
     "date_range": {
       "start": "2023-11-13 00:00:00",
       "end": "2026-11-09 00:00:00"
